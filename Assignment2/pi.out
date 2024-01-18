@@ -1,0 +1,33 @@
+CPUS:  8
+Pi estimate: 3.14159265258932363096, obtained in 5.166402 seconds
+DONE 
+CPUS:  12
+Pi estimate: 3.14159265258979703006, obtained in 3.435612 seconds
+DONE 
+CPUS:  16
+Pi estimate: 3.14159265259020425987, obtained in 2.605190 seconds
+DONE 
+CPUS:  20
+Pi estimate: 3.14159265259025044514, obtained in 2.075498 seconds
+DONE 
+CPUS:  24
+Pi estimate: 3.14159265259062081554, obtained in 1.749654 seconds
+DONE 
+CPUS:  28
+Pi estimate: 3.14159265259036146745, obtained in 1.512192 seconds
+DONE 
+CPUS:  32
+Pi estimate: 3.14159265259010700433, obtained in 1.338800 seconds
+DONE 
+CPUS:  36
+Pi estimate: 3.14159265258958875222, obtained in 1.857838 seconds
+DONE 
+CPUS:  40
+Pi estimate: 3.14159265258981701407, obtained in 1.762891 seconds
+DONE 
+CPUS:  44
+Pi estimate: 3.14159265258962339118, obtained in 1.721630 seconds
+DONE 
+CPUS:  48
+Pi estimate: 3.14159265258978104285, obtained in 1.708740 seconds
+DONE
