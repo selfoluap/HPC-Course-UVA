@@ -12,9 +12,6 @@ with open('pi.out', 'r') as file:
     times = re.findall(time_pattern, text)
     times = [float(time) for time in times]
 
-print(threads)
-print(times)
-
 fig, ax = plt.subplots()
 ax.plot(threads, times)
 ax.set_xlabel('Number of Threads')
