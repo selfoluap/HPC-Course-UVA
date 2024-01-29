@@ -9,7 +9,6 @@
 #include <time.h>
 
 
-
 void initialize_grid(int *grid, int size, int pattern) {
     // Initialize the grid with starting state
     for (int i = 0; i < size; i++) {
@@ -18,11 +17,12 @@ void initialize_grid(int *grid, int size, int pattern) {
         }
     }
 
+    int center = size / 2;
+
     switch (pattern)
     {
     case 0:
         // Initialize the grid so that the first element of the pattern is width/2, height/2 of the grid
-        int center = size / 2;
         for (int i = 0; i < GROWER_HEIGHT; i++) {
             for (int j = 0; j < GROWER_WIDTH; j++) {
                 int gridX = center + i;
@@ -225,8 +225,8 @@ int main(int argc, char *argv[]) {
     
     for (int step = 0; step < atoi(argv[2]); step++) {
         if (world_rank == 0) {
-            print_grid(grid, grid_size);
-            printf("Step %d: %d living cells\n", step, count_living_cells(grid, grid_size));
+            //print_grid(grid, grid_size);
+            //printf("Step %d: %d living cells\n", step, count_living_cells(grid, grid_size));
         }
         compute_next_step(grid, grid_size, world_rank, world_size);
 
@@ -236,6 +236,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (world_rank == 0) {
+        printf("%d living cells\n", count_living_cells(grid, grid_size));
         printf("Total time: %f\n", (double)(clock() - start) / CLOCKS_PER_SEC);
     }
 
