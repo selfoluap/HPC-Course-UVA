@@ -21,27 +21,34 @@ void initialize_grid(int *grid, int size, int pattern) {
     switch (pattern)
     {
     case 0:
-        // Initialize the pattern in the center of the global board
+        // Initialize the grid so that the first element of the pattern is width/2, height/2 of the grid
+        int center = size / 2;
         for (int i = 0; i < GROWER_HEIGHT; i++) {
             for (int j = 0; j < GROWER_WIDTH; j++) {
-                int gridIndex = (size / 2 - GROWER_HEIGHT / 2 + i) * size + (size / 2 - GROWER_WIDTH / 2 + j);
+                int gridX = center + i;
+                int gridY = center + j;
+                int gridIndex = gridX * size + gridY;
                 grid[gridIndex] = grower[i][j];
             }
-        }      
+        }
         break;
     case 1:
         for (int i = 0; i < BEEHIVE_HEIGHT; i++) {
             for (int j = 0; j < BEEHIVE_WIDTH; j++) {
-                int gridIndex = (size / 2 - BEEHIVE_HEIGHT / 2 + i) * size + (size / 2 - BEEHIVE_WIDTH / 2 + j);
+                int gridX = center + i;
+                int gridY = center + j;
+                int gridIndex = gridX * size + gridY;
                 grid[gridIndex] = beehive[i][j];
             }
-        }    
+        }
 
         break;
     case 2:
         for (int i = 0; i < GLIDER_HEIGHT; i++) {
             for (int j = 0; j < GLIDER_WIDTH; j++) {
-                int gridIndex = (size / 2 - GLIDER_HEIGHT / 2 + i) * size + (size / 2 - GLIDER_WIDTH / 2 + j);
+                int gridX = center + i;
+                int gridY = center + j;
+                int gridIndex = gridX * size + gridY;
                 grid[gridIndex] = glider[i][j];
             }
         }
@@ -57,7 +64,7 @@ void compute_next_step(int *grid, int size, int world_rank, int world_size) {
 
     send_receive_edges(grid, size, world_rank, world_size);
 
-    #pragma omp parallel for
+    #pragma omp parallel for 
     for (int i = 0; i < rows_per_process; i++) {
         for (int j = 0; j < size; j++) {
             int alive_neighbors = count_alive_neighbors(grid, size, i, j);
@@ -81,9 +88,9 @@ int count_alive_neighbors(int *grid, int size, int x, int y) {
 
     for (int i = -1; i <= 1; i++) {
         for (int j = -1; j <= 1; j++) {
-            if (i == 0 && j == 0) continue; // Skip the cell itself
+            if (i == 0 && j == 0) continue; 
 
-            row = (x + i + size) % size; // Wrap around the grid if necessary
+            row = (x + i + size) % size; 
             col = (y + j + size) % size;
 
             if (grid[row * size + col] == 1) {
@@ -161,8 +168,11 @@ void print_grid(int *grid, int size) {
     // just a helper function to print the grid
     printf("Grid:\n");
     for (int i = 0; i < size; i++) {
+        printf("Row %d:", i);
         for (int j = 0; j < size; j++) {
-            printf("%d ", grid[i * size + j]);
+            if( i == 0)
+                printf("Column %d:", j);
+            printf("%s ", grid[i * size + j] ? "X" : ".");
         }
         printf("\n");
     }
@@ -203,27 +213,26 @@ int main(int argc, char *argv[]) {
     }
 
    
-    int grid_size = atoi(argv[1]);  // Example size, adjust as needed
+    int grid_size = atoi(argv[1]);
     int *grid = (int*)malloc(grid_size * grid_size * sizeof(int));
 
     if (world_rank == 0) {
-        // Initialize the grid with starting state
         initialize_grid(grid, grid_size, atoi(argv[3]));
     }
 
-    // Distribute the grid to all processes
     distribute_grid(grid, grid_size, world_rank, world_size);
 
     
-    for (int step = 0; step < atoi(argv[2]); step++) { 
-        compute_next_step(grid, grid_size, world_rank, world_size);
-
-        gather_grid(grid, grid_size, world_rank, world_size);
-
+    for (int step = 0; step < atoi(argv[2]); step++) {
         if (world_rank == 0) {
             print_grid(grid, grid_size);
             printf("Step %d: %d living cells\n", step, count_living_cells(grid, grid_size));
         }
+        compute_next_step(grid, grid_size, world_rank, world_size);
+
+        gather_grid(grid, grid_size, world_rank, world_size);
+
+
     }
 
     if (world_rank == 0) {
