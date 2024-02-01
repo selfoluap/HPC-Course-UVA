@@ -6,9 +6,9 @@
 #include "beehive.h"
 #include "grower.h"
 
-#define WIDTH 300
-#define HEIGHT 300
-#define ITERATIONS 10
+#define WIDTH 3000
+#define HEIGHT 3000
+#define ITERATIONS 5000
 
 void update_board(int **board, int height, int width) {
     // Temporary board to store new values
@@ -17,11 +17,12 @@ void update_board(int **board, int height, int width) {
         new_board[i] = (int *)malloc(width * sizeof(int));
     }
 
-    #pragma omp parallel for
+    #pragma omp parallel for collapse(2)
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             int live_neighbors = 0;
 
+            #pragma omp parallel for reduction(+:live_neighbors)
             // Count alive neighbors for wach cell
             for (int di = -1; di <= 1; di++) {
                 for (int dj = -1; dj <= 1; dj++) {
@@ -45,6 +46,7 @@ void update_board(int **board, int height, int width) {
         }
     }
 
+    
     // Copy the new values back to the original board and free the temporary board
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
