@@ -9,6 +9,10 @@
 #include <time.h>
 
 
+void send_receive_edges(int *grid, int size, int world_rank, int world_size);
+int count_alive_neighbors(int *grid, int size, int x, int y);
+
+
 void initialize_grid(int *grid, int size, int pattern) {
     // Initialize the grid with starting state
     for (int i = 0; i < size; i++) {
@@ -84,37 +88,33 @@ void compute_next_step(int *grid, int size, int world_rank, int world_size) {
 
 int count_alive_neighbors(int *grid, int size, int x, int y) {
     int alive = 0;
-    int row, col;
-
     for (int i = -1; i <= 1; i++) {
         for (int j = -1; j <= 1; j++) {
-            if (i == 0 && j == 0) continue; 
-
-            row = (x + i + size) % size; 
-            col = (y + j + size) % size;
-
+            if (i == 0 && j == 0) continue;
+            int row = (x + i + size) % size;
+            int col = (y + j + size) % size;
             if (grid[row * size + col] == 1) {
                 alive++;
             }
         }
     }
-
     return alive;
 }
 
-void distribute_grid(int *grid, int grid_size, int world_rank, int number_of_processes) {
-    int rows_per_process = grid_size / number_of_processes;
+
+void distribute_grid(int *grid, int grid_size, int world_rank, int world_size) {
+    int rows_per_process = grid_size / world_size;
     int *subgrid = (int *)malloc(rows_per_process * grid_size * sizeof(int));
 
-    // Scatter sends chunks of an array to each process
     MPI_Scatter(grid, rows_per_process * grid_size, MPI_INT, 
                 subgrid, rows_per_process * grid_size, MPI_INT, 
                 0, MPI_COMM_WORLD);
 
-    // Replace the original grid with the subgrid in each process
     memcpy(grid, subgrid, rows_per_process * grid_size * sizeof(int));
     free(subgrid);
+    
 }
+
 
 void gather_grid(int *grid, int size, int world_rank, int world_size) {
     int rows_per_process = size / world_size;
@@ -135,34 +135,39 @@ void gather_grid(int *grid, int size, int world_rank, int world_size) {
 }
 
 
+
 void send_receive_edges(int *grid, int size, int world_rank, int world_size) {
     MPI_Status status;
     int rows_per_process = size / world_size;
     int *top_row = (int *)malloc(size * sizeof(int));
     int *bottom_row = (int *)malloc(size * sizeof(int));
 
+    // Send and receive the top row
     if (world_rank > 0) {
         MPI_Sendrecv(grid, size, MPI_INT, world_rank - 1, 0,
-                     bottom_row, size, MPI_INT, world_rank + 1, 0,
+                     bottom_row, size, MPI_INT, world_rank - 1, 0,
                      MPI_COMM_WORLD, &status);
     }
 
+    // Send and receive the bottom row
     if (world_rank < world_size - 1) {
         MPI_Sendrecv(&grid[(rows_per_process - 1) * size], size, MPI_INT, world_rank + 1, 0,
-                     top_row, size, MPI_INT, world_rank - 1, 0,
+                     top_row, size, MPI_INT, world_rank + 1, 0,
                      MPI_COMM_WORLD, &status);
     }
 
+    // Copy the received rows into the correct position
     if (world_rank > 0) {
-        memcpy(grid - size, bottom_row, size * sizeof(int)); // Insert the bottom row at the top
+        memcpy(grid, bottom_row, size * sizeof(int));
     }
     if (world_rank < world_size - 1) {
-        memcpy(grid + rows_per_process * size, top_row, size * sizeof(int)); // Insert the top row at the bottom
+        memcpy(&grid[rows_per_process * size], top_row, size * sizeof(int));
     }
 
     free(top_row);
     free(bottom_row);
 }
+
 
 void print_grid(int *grid, int size) {
     // just a helper function to print the grid
