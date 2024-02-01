@@ -10,25 +10,17 @@
 #define HEIGHT 3000
 #define ITERATIONS 5000
 
-void update_board(int **board, int height, int width) {
-    // Temporary board to store new values
-    int **new_board = (int **)malloc(height * sizeof(int *));
-    for (int i = 0; i < height; i++) {
-        new_board[i] = (int *)malloc(width * sizeof(int));
-    }
-
+void update_board(int **board, int **new_board, int height, int width) {
     #pragma omp parallel for collapse(2)
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             int live_neighbors = 0;
 
-            #pragma omp parallel for reduction(+:live_neighbors)
-            // Count alive neighbors for wach cell
+            // Simplified boundary checks
             for (int di = -1; di <= 1; di++) {
                 for (int dj = -1; dj <= 1; dj++) {
                     if (di == 0 && dj == 0) continue;
                     int ni = i + di, nj = j + dj;
-                    // Check the boundaries
                     if (ni >= 0 && ni < height && nj >= 0 && nj < width) {
                         live_neighbors += board[ni][nj];
                     }
@@ -46,15 +38,13 @@ void update_board(int **board, int height, int width) {
         }
     }
 
-    
-    // Copy the new values back to the original board and free the temporary board
+    // Copy the new values back to the original board
+    #pragma omp parallel for collapse(2)
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             board[i][j] = new_board[i][j];
         }
-        free(new_board[i]);
     }
-    free(new_board);
 }
 
 int count_live_cells(int **board, int height, int width) {
@@ -75,6 +65,12 @@ int main(int argc, char *argv[]) {
     if (board == NULL) {
         printf("Error allocating memory for the board\n");
         exit(1);
+    }
+
+    // Allocation of new_board
+    int **new_board = (int **)malloc(HEIGHT * sizeof(int *));
+    for (int i = 0; i < HEIGHT; i++) {
+        new_board[i] = (int *)malloc(WIDTH * sizeof(int));
     }
 
     for (int i = 0; i < HEIGHT; i++) {
@@ -141,7 +137,7 @@ int main(int argc, char *argv[]) {
 
     // Run the simulation
     for (int iteration = 0; iteration < ITERATIONS; iteration++) {
-        update_board(board, HEIGHT, WIDTH);
+        update_board(board, new_board, HEIGHT, WIDTH);
     }
 
     end = omp_get_wtime();
@@ -153,9 +149,10 @@ int main(int argc, char *argv[]) {
     // Free the memory allocated for the board
     for (int i = 0; i < HEIGHT; i++) {
         free(board[i]);
+        free(new_board[i]);
     }
     free(board);
-
+    free(new_board);
 
     return 0;
 }
